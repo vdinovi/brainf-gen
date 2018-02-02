@@ -5,8 +5,12 @@ MIN_LEN = 5
 MAX_LEN = 10
 CROSS_WEIGHT = 0.4
 LANGUAGE = ('>', '<', '+', '-')
+BUFFER_SIZE = 20
 
-def interpet(program, array):
+def prog_buffer(length):
+    return [0]*length
+
+def interpret(program, array):
     index = 0
     for op in program:
         if   op == '>':
@@ -40,12 +44,24 @@ def crossover(progX, progY):
 
 
 def evaluate_fitness(prog, target):
-    raise StandardError("NYI")
+    result = interpret(prog, target)
+    fitness = 0
+    for i, v in enumerate(target):
+        if i < len(result):
+            fitness += abs(result[i] - target[i])
+    return fitness
+
+
 
 
 
 if __name__ == "__main__":
     progX = create_simple_program([1,2,3])
+    resPX = interpret(progX, prog_buffer(BUFFER_SIZE))
     progY = create_simple_program([1,2,3])
+    resPY = interpret(progX, prog_buffer(BUFFER_SIZE))
     cross = crossover(progX, progY)
+    resCX = interpret(cross[0], prog_buffer(BUFFER_SIZE))
+    resCY = interpret(cross[1], prog_buffer(BUFFER_SIZE))
     print(str((progX, progY)) + ' -> ' + str(cross))
+    print((resPX, resPY, resCX, resCY))
