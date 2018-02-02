@@ -1,6 +1,10 @@
+import pdb
+
+
 class InvalidSymbol(Exception):
     def __init__(self, msg):
         self.msg =  msg
+
 MIN_LEN = 5
 MAX_LEN = 10
 CROSS_WEIGHT = 0.4
@@ -10,9 +14,9 @@ BUFFER_SIZE = 20
 def prog_buffer(length):
     return [0]*length
 
-def interpret(program, array):
+def interpret(prog, array):
     index = 0
-    for op in program:
+    for op in prog:
         if   op == '>':
             index += 1
         elif op == '<':
@@ -43,8 +47,7 @@ def crossover(progX, progY):
     return (''.join(childX), ''.join(childY), crossIndex)
 
 
-def evaluate_fitness(prog, target):
-    result = interpret(prog, target)
+def evaluate_fitness(result, target):
     fitness = 0
     for i, v in enumerate(target):
         if i < len(result):
@@ -52,16 +55,27 @@ def evaluate_fitness(prog, target):
     return fitness
 
 
+"""
+def empty_target(length):
+    return [0]*length
+
+def print_prog(name, prog, target):
+    result = interpret(prog, prog_buffer(BUFFER_SIZE))
+    print (
+        name,
+        prog,
+        str(result),
+        evaluate_fitness(result, target)
+    )
 
 
 
 if __name__ == "__main__":
     progX = create_simple_program([1,2,3])
-    resPX = interpret(progX, prog_buffer(BUFFER_SIZE))
+    print_prog('ProgX', progX, empty_target(BUFFER_SIZE))
     progY = create_simple_program([1,2,3])
-    resPY = interpret(progX, prog_buffer(BUFFER_SIZE))
-    cross = crossover(progX, progY)
-    resCX = interpret(cross[0], prog_buffer(BUFFER_SIZE))
-    resCY = interpret(cross[1], prog_buffer(BUFFER_SIZE))
-    print(str((progX, progY)) + ' -> ' + str(cross))
-    print((resPX, resPY, resCX, resCY))
+    print_prog('ProgY', progX, empty_target(BUFFER_SIZE))
+    childX, childY, crossIndex = crossover(progX, progY)
+    print_prog('ChildX', childX, empty_target(BUFFER_SIZE))
+    print_prog('ChildY', childY, empty_target(BUFFER_SIZE))
+"""
