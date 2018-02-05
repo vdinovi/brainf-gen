@@ -19,7 +19,7 @@ MIN_LEN = 5
 MAX_LEN = 10
 CROSS_WEIGHT = 0.4
 LANGUAGE = ('>', '<', '+', '-')
-BUFFER_SIZE = 10000
+BUFFER_SIZE = 10
 STARTING_POP = 10
 ITERATIONS = 20
 
@@ -109,7 +109,7 @@ def selectCrossover(population, target, interpreter):
 
 
 def create_simple_program(target, interpreter):
-    population = generate_population(2**13)
+    population = generate_population(2**8)
     calculate_fitness(population, target, interpreter)
     #normalize_population(population)
     natural_select_pop(population)
@@ -135,8 +135,10 @@ def create_simple_program(target, interpreter):
 def crossover(program_x, program_y):
     childX = list(program_x)
     childY = list(program_y)
-    length = min(len(program_x), len(program_y))
-    crossIndex = int(length * CROSS_WEIGHT)
+    if len(childX) < 3 or len(childY) < 3:
+        raise Exception("Programs too short to crossover: {}, {}".format(len(childX), len(childY)))
+    maxPos = min(len(program_x), len(program_y))-2
+    crossIndex = int(random.uniform(1, maxPos))
     swap = childX[0 : crossIndex]
     childX[0 : crossIndex] = program_y[0 : crossIndex]
     childY[0 : crossIndex] = swap
@@ -173,10 +175,8 @@ def print_prog(name, prog, target):
 
 
 
-"""
 if __name__ == "__main__":
     winner = create_simple_program([1,2,3,4,5,6,7,8,9,10], interpret)
-"""
 
 
 
