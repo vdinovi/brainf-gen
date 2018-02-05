@@ -18,7 +18,8 @@ class InvalidSymbol(Exception):
 MIN_LEN = 5
 MAX_LEN = 10
 CROSS_WEIGHT = 0.4
-LANGUAGE = ('>', '<', '+', '-')
+SIMPLE_LANGUAGE = ('>', '<', '+', '-')
+LANGUAGE = ('>', '<', '+', '-', '[', ']')
 BUFFER_SIZE = 10
 STARTING_POP = 10
 ITERATIONS = 20
@@ -39,13 +40,17 @@ def interpret(prog, array):
             array[index] += 1
         elif op == '-':
             array[index] -= 1
+        elif op == '[':
+            raise Exception ("'[' not yet implemented")
+        elif op == '[':
+            raise Exception ("']' not yet implemented")
     return array
 
 
-def random_progam(length):
+def random_simple_progam(length):
     # O(1)
     return {
-        'program': ''.join([random.choice(LANGUAGE) for _ in range(0, length)]),
+        'program': ''.join([random.choice(SIMPLE_LANGUAGE) for _ in range(0, length)]),
         'fitness': -1
     }
 
@@ -70,7 +75,7 @@ def generate_population(size):
     population = []
     for i in range(0, size):
         length = random.randint(MIN_LEN, MAX_LEN)
-        population.append(random_progam(length))
+        population.append(random_simple_progam(length))
     return population
 
 
