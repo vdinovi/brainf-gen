@@ -135,15 +135,20 @@ def create_simple_program(target, interpreter):
 def crossover(program_x, program_y):
     childX = list(program_x)
     childY = list(program_y)
+    a = ''.join(childX)
+    b = ''.join(childY)
     if len(childX) < 3 or len(childY) < 3:
         raise Exception("Programs too short to crossover: {}, {}".format(len(childX), len(childY)))
     maxPos = min(len(program_x), len(program_y))-2
-    crossIndex = int(random.uniform(1, maxPos))
+    crossIndex = int(random.uniform(2, maxPos))
     swap = childX[0 : crossIndex]
     childX[0 : crossIndex] = program_y[0 : crossIndex]
     childY[0 : crossIndex] = swap
     childX = ''.join(childX)
     childY = ''.join(childY)
+    #print("{} -> {} ({})".format(a, childX, crossIndex))
+    #print("{} -> {} ({})".format(b, childY, crossIndex))
+    #print()
     return childX, childY
 
 def evaluate_fitness(prog, target, interpreter):
