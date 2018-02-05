@@ -19,7 +19,7 @@ MIN_LEN = 5
 MAX_LEN = 10
 CROSS_WEIGHT = 0.4
 LANGUAGE = ('>', '<', '+', '-')
-BUFFER_SIZE = 20
+BUFFER_SIZE = 10000
 STARTING_POP = 10
 ITERATIONS = 20
 
@@ -31,7 +31,7 @@ def prog_buffer(length):
 def interpret(prog, array):
     index = 0
     for op in prog:
-        if op == '>' and index < len(array):
+        if op == '>' and index < len(array) - 1:
             index += 1
         elif op == '<' and index > 0:
             index -= 1
@@ -149,9 +149,13 @@ def evaluate_fitness(prog, target, interpreter):
     result = interpreter(prog, buf)
 
     fitness = 0
-    for i, v in enumerate(target):
-        if i < len(result):
+    for i in range(0, max(len(target), len(result))):
+        if i < len(result) and i < len(target):
             fitness += abs(result[i] - target[i])
+        elif i < len(result):
+            fitness += abs(result[i])
+        else:
+            fitness += abs(target[i])
     return fitness
 
 
@@ -169,8 +173,10 @@ def print_prog(name, prog, target):
 
 
 
+"""
 if __name__ == "__main__":
     winner = create_simple_program([1,2,3,4,5,6,7,8,9,10], interpret)
+"""
 
 
 
