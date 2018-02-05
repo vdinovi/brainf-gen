@@ -31,16 +31,14 @@ def prog_buffer(length):
 def interpret(prog, array):
     index = 0
     for op in prog:
-        if   op == '>':
+        if op == '>' and index < len(array):
             index += 1
-        elif op == '<':
+        elif op == '<' and index > 0:
             index -= 1
         elif op == '+':
             array[index] += 1
         elif op == '-':
             array[index] -= 1
-        else:
-            raise InvalidSymbol(op)
     return array
 
 
@@ -63,9 +61,7 @@ def select(population):
 
 def normalize_population(population):
     # O(2n)
-    total_fitness = 0
-    for m in population:
-        total_fitness += m['fitness']
+    total_fitness = sum([m['fitness'] for m in population])
     for m in population:
         m['score'] = total_fitness - m['fitness']
 
@@ -85,15 +81,15 @@ def calculate_fitness(population, target, interpreter):
             member['program'], target, interpreter
         )
 
-def naturalSelectPair(A, B):
+def natural_select_pair(A, B):
     # O(1)
     return min([A, B], key=lambda x: x['fitness'])
 
 
 # Remove 1/2 of the least 'fittest' from population
-def naturalSelectPop(population):
+def natural_select_pop(population):
     for _ in range(0, int(len(population)/2)):
-        selected = min(population, key=lambda x: x['score'])
+        selected = max(population, key=lambda x: x['fitness'])
         population.remove(selected)
 
 def selectCrossover(population, target, interpreter):
@@ -109,40 +105,40 @@ def selectCrossover(population, target, interpreter):
         'program': cProgY,
         'fitness': evaluate_fitness(cProgY, target, interpreter)
     } 
-    return naturalSelectPair(childX, childY)
+    return childX, childY
 
 
 def create_simple_program(target, interpreter):
-    population = generate_population(2**10)
+    population = generate_population(2**13)
     calculate_fitness(population, target, interpreter)
-    normalize_population(population)
-    naturalSelectPop(population)
+    #normalize_population(population)
+    natural_select_pop(population)
     gen = 0
     while len(population) > 1:
         numCrossovers = math.sqrt(len(population))
-        while len(population) > 1 and numCrossovers > 0:
-            population.append(selectCrossover(population, target, interpreter))
-            if len(population) == 1:
-                break
+        while numCrossovers > 0:
+            c1, c2 = selectCrossover(population, target, interpreter)
+            population.append(c1)
+            population.append(c2)
             numCrossovers -= 1
-        normalize_population(population)
-        naturalSelectPop(population)
+        #normalize_population(population)
+        natural_select_pop(population)
         gen += 1
     winner = population[0]
-    #print("After {} iterations, selected: {}({}) -> {}".format(
-    #    gen, winner['program'], winner['fitness'], interpreter(winner['program'],
-    #    prog_buffer(BUFFER_SIZE))))
+    print("After {} iterations, selected: {}({}) -> {}".format(
+        gen, winner['program'], winner['fitness'], interpreter(winner['program'],
+        prog_buffer(BUFFER_SIZE))))
     return winner['program']
 
 
 
-def crossover(progX, progY):
-    childX = list(progX)
-    childY = list(progY)
-    length = min(len(progX), len(progY))
+def crossover(program_x, program_y):
+    childX = list(program_x)
+    childY = list(program_y)
+    length = min(len(program_x), len(program_y))
     crossIndex = int(length * CROSS_WEIGHT)
     swap = childX[0 : crossIndex]
-    childX[0 : crossIndex] = progY[0 : crossIndex]
+    childX[0 : crossIndex] = program_y[0 : crossIndex]
     childY[0 : crossIndex] = swap
     childX = ''.join(childX)
     childY = ''.join(childY)
