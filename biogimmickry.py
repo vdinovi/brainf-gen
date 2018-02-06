@@ -30,20 +30,27 @@ def prog_buffer(length):
 
 
 def interpret(prog, array):
-    index = 0
-    for op in prog:
-        if op == '>' and index < len(array) - 1:
-            index += 1
-        elif op == '<' and index > 0:
-            index -= 1
-        elif op == '+':
-            array[index] += 1
-        elif op == '-':
-            array[index] -= 1
-        elif op == '[':
-            raise Exception ("'[' not yet implemented")
-        elif op == '[':
-            raise Exception ("']' not yet implemented")
+    dp = 0
+    pc = 0
+    while pc < len(prog):
+        #pdb.set_trace()
+        if prog[pc] == '>' and dp < len(array) - 1:
+            dp += 1
+        elif prog[pc] == '<' and dp > 0:
+            dp -= 1
+        elif prog[pc] == '+':
+            array[dp] += 1
+        elif prog[pc] == '-':
+            array[dp] -= 1
+        elif prog[dp] == '[':
+            if not array[dp]:
+                while prog[pc] != ']':
+                    pc += 1
+        elif prog[pc] == ']':
+            if array[dp]:
+                while prog[pc] != '[':
+                    pc -= 1
+        pc += 1
     return array
 
 
@@ -185,8 +192,14 @@ def print_prog(name, prog, target):
 
 
 
+"""
+from sys import argv
 if __name__ == "__main__":
-    winner = create_simple_program([1,2,3,4,5,6,7,8,9,10], interpret)
+    #winner = create_simple_program([1,2,3,4,5,6,7,8,9,10], interpret)
+    buf = prog_buffer(BUFFER_SIZE)
+    result = interpret(argv[1], buf)
+    print(result)
+"""
 
 
 
