@@ -28,12 +28,33 @@ ITERATIONS = 20
 def prog_buffer(length):
     return [0] * length
 
+def jump_forward(prog, pc):
+    count = 1
+    i = pc + 1
+    while count:
+        if prog[i] == '[':
+            count += 1
+        elif prog[i] == ']':
+            count -= 1
+        i += 1
+    return i - 1
+
+def jump_backward(prog, pc):
+    count = 1
+    i = pc - 1
+    while count:
+        if prog[i] == ']':
+            count += 1
+        elif prog[i] == '[':
+            count -= 1
+        i -= 1
+    return i + 1
+
 
 def interpret(prog, array):
     dp = 0
     pc = 0
     while pc < len(prog):
-        #pdb.set_trace()
         if prog[pc] == '>' and dp < len(array) - 1:
             dp += 1
         elif prog[pc] == '<' and dp > 0:
@@ -44,12 +65,10 @@ def interpret(prog, array):
             array[dp] -= 1
         elif prog[dp] == '[':
             if not array[dp]:
-                while prog[pc] != ']':
-                    pc += 1
+                pc = jump_forward(prog, pc)
         elif prog[pc] == ']':
             if array[dp]:
-                while prog[pc] != '[':
-                    pc -= 1
+                pc = jump_backward(prog, pc)
         pc += 1
     return array
 
@@ -192,14 +211,12 @@ def print_prog(name, prog, target):
 
 
 
-"""
 from sys import argv
 if __name__ == "__main__":
     #winner = create_simple_program([1,2,3,4,5,6,7,8,9,10], interpret)
     buf = prog_buffer(BUFFER_SIZE)
     result = interpret(argv[1], buf)
     print(result)
-"""
 
 
 
