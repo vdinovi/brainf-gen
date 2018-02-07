@@ -11,7 +11,7 @@ import math
 
 SIMPLE_LANGUAGE = ('>', '<', '+', '-')
 LANGUAGE = ('>', '<', '+', '-', '[', ']')
-NUM_GENERATIONS = 500
+NUM_GENERATIONS = 200
 
 
 def prog_buffer(length):
@@ -78,13 +78,18 @@ def normalize_population(population):
     for m in population:
         m['score'] = total_fitness - m['fitness']
 
+def min_length(target):
+    count = 0
+    for i in range(0, len(target)):
+        count += i + target[i]
+    return count
 
-def generate_population(size):
+def generate_population(size, target):
+    min_l = min_length(target)
+    max_l = min_l * 4
     population = []
-    min_len = 5
-    max_len = 30
     for i in range(0, size):
-        length = random.randint(min_len, max_len)
+        length = random.randint(min_l, max_l)
         population.append(random_simple_progam(length))
     return population
 
@@ -146,7 +151,7 @@ def avg_fitness(population):
     return total / len(population)
 
 def create_simple_program(target, interpreter):
-    population = generate_population(2**8)
+    population = generate_population(2**8, target)
     calculate_fitness(population, target, interpreter)
     #normalize_population(population)
     #natural_select_pop(population)
@@ -189,6 +194,7 @@ def crossover(program_x, program_y):
     childY[0 : crossIndex] = swap
     childX = ''.join(childX)
     childY = ''.join(childY)
+    #print("{} -> {}\n{} -> {}".format(program_x, childX, program_y, childY))
     return childX, childY
 
 def evaluate_fitness(prog, target, interpreter):
