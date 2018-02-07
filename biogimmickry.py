@@ -16,7 +16,7 @@ SIMPLE_LANGUAGE = ('>', '<', '+', '-')
 LANGUAGE = ('>', '<', '+', '-', '[', ']')
 BUFFER_SIZE = 100
 STARTING_POP = 10000
-ITERATIONS = 20
+NUM_GENERATIONS = 1000
 
 
 def prog_buffer(length):
@@ -74,7 +74,7 @@ def random_simple_progam(length):
     }
 
 
-def select(population):
+def select_random(population):
     cutoff = random.uniform(0, 1)
     total = 0
     for i, member in enumerate(population):
@@ -82,10 +82,12 @@ def select(population):
         if total > cutoff:
             return population.pop(i)
 
+
 def normalize_population(population):
     total_fitness = sum([m['fitness'] for m in population])
     for m in population:
         m['score'] = total_fitness - m['fitness']
+
 
 def generate_population(size):
     population = []
@@ -101,19 +103,25 @@ def calculate_fitness(population, target, interpreter):
             member['program'], target, interpreter
         )
 
+
 def natural_select_pair(A, B):
     return min([A, B], key=lambda x: x['fitness'])
 
 
 # Remove 1/2 of the least 'fittest' from population
 def natural_select_pop(population):
+    orig_size = len(population)
     for _ in range(0, int(len(population)/2)):
         selected = max(population, key=lambda x: x['fitness'])
         population.remove(selected)
+    while len(population) < orig_size:
+        clone = random.choice(population)
+        population.append(clone)
 
-def selectCrossover(population, target, interpreter):
-    progX = select(population)
-    progY = select(population)
+
+def select_crossover(population, target, interpreter):
+    progX = select_random(population)
+    progY = select_random(population)
     cProgX, cProgY = crossover(progX['program'], progY['program'])
     childX = {
         'program': cProgX,
@@ -127,15 +135,15 @@ def selectCrossover(population, target, interpreter):
 
 
 def create_simple_program(target, interpreter):
-    population = generate_population(2**10)
+    population = generate_population(2**8)
     calculate_fitness(population, target, interpreter)
     #normalize_population(population)
     #natural_select_pop(population)
     gen = 0
-    while len(population) > 1:
-        numCrossovers = math.sqrt(len(population))
+    while gen < NUM_GENERATIONS:
+        numCrossovers = len(population)**(1/4)
         while numCrossovers > 0:
-            c1, c2 = selectCrossover(population, target, interpreter)
+            c1, c2 = select_crossover(population, target, interpreter)
             population.append(c1)
             population.append(c2)
             numCrossovers -= 1
@@ -162,7 +170,6 @@ def crossover(program_x, program_y):
     childY = ''.join(childY)
     #print("{} -> {} ({})".format(program_x, childX, crossIndex))
     #print("{} -> {} ({})".format(program_y, childY, crossIndex))
-    #print()
     return childX, childY
 
 def evaluate_fitness(prog, target, interpreter):
@@ -174,18 +181,6 @@ def evaluate_fitness(prog, target, interpreter):
     return fitness
 
 
-def empty_target(length):
-    return [0] * length
-
-def print_prog(name, prog, target):
-    result = interpret(prog, prog_buffer(BUFFER_SIZE))
-    print (
-        name,
-        prog,
-        str(result),
-        evaluate_fitness(result, target)
-    )
-
 
 from sys import argv
 if __name__ == "__main__":
@@ -193,15 +188,3 @@ if __name__ == "__main__":
     #buf = prog_buffer(BUFFER_SIZE)
     #result = interpret(argv[1], buf)
     #print(result)
-
-
-
-"""
-    progX = create_simple_program([1,2,3])
-    print_prog('ProgX', progX, empty_target(BUFFER_SIZE))
-    progY = create_simple_program([1,2,3])
-    print_prog('ProgY', progX, empty_target(BUFFER_SIZE))
-    childX, childY, crossIndex = crossover(progX, progY)
-    print_prog('ChildX', childX, empty_target(BUFFER_SIZE))
-    print_prog('ChildY', childY, empty_target(BUFFER_SIZE))
-"""
