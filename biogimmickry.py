@@ -16,7 +16,7 @@ SIMPLE_LANGUAGE = ('>', '<', '+', '-')
 LANGUAGE = ('>', '<', '+', '-', '[', ']')
 BUFFER_SIZE = 100
 STARTING_POP = 10000
-NUM_GENERATIONS = 1000
+NUM_GENERATIONS = 10000
 
 
 def prog_buffer(length):
@@ -133,6 +133,23 @@ def select_crossover(population, target, interpreter):
     } 
     return childX, childY
 
+def substitute_mutation(prog):
+    pos = random.randint(0, len(prog) - 1)
+    prog = list(prog)
+    prog[pos] = random.choice(SIMPLE_LANGUAGE)
+    return ''.join(prog)
+
+
+
+
+def select_point_mutation(population, target, interpreter):
+    child = select_random(population)
+    cProg = substitute_mutation(child['program'])
+    return {
+        'program': cProg,
+        'fitness': evaluate_fitness(cProg, target, interpreter)
+    }
+
 
 def create_simple_program(target, interpreter):
     population = generate_population(2**8)
@@ -141,12 +158,19 @@ def create_simple_program(target, interpreter):
     #natural_select_pop(population)
     gen = 0
     while gen < NUM_GENERATIONS:
-        numCrossovers = len(population)**(1/4)
-        while numCrossovers > 0:
+        num_crossovers = int(0.1 * len(population))
+        # run crossover mutations
+        while num_crossovers > 0:
             c1, c2 = select_crossover(population, target, interpreter)
             population.append(c1)
             population.append(c2)
-            numCrossovers -= 1
+            num_crossovers -= 1
+        num_point_mutations = int(0.25 * len(population))
+        # run point mutations (sub)
+        while num_point_mutations > 0:
+            child = select_point_mutation(population, target, interpreter)
+            population.append(child)
+            num_point_mutations -= 1
         natural_select_pop(population)
         gen += 1
     winner = population[0]
@@ -184,7 +208,7 @@ def evaluate_fitness(prog, target, interpreter):
 
 from sys import argv
 if __name__ == "__main__":
-    winner = create_simple_program([1,2,3,4,5,6,7,8,9,10], interpret)
+    winner = create_simple_program([1,2,3,4,5], interpret)
     #buf = prog_buffer(BUFFER_SIZE)
     #result = interpret(argv[1], buf)
     #print(result)
