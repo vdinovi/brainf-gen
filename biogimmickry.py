@@ -68,7 +68,6 @@ def interpret(prog, array):
 
 
 def random_simple_progam(length):
-    # O(1)
     return {
         'program': ''.join([random.choice(SIMPLE_LANGUAGE) for _ in range(0, length)]),
         'fitness': -1
@@ -76,7 +75,6 @@ def random_simple_progam(length):
 
 
 def select(population):
-    # O(n)
     cutoff = random.uniform(0, 1)
     total = 0
     for i, member in enumerate(population):
@@ -129,7 +127,7 @@ def selectCrossover(population, target, interpreter):
 
 
 def create_simple_program(target, interpreter):
-    population = generate_population(2**4)
+    population = generate_population(2**10)
     calculate_fitness(population, target, interpreter)
     #normalize_population(population)
     #natural_select_pop(population)
@@ -144,9 +142,9 @@ def create_simple_program(target, interpreter):
         natural_select_pop(population)
         gen += 1
     winner = population[0]
-    #print("After {} iterations, selected: {}({}) -> {}".format(
-    #    gen, winner['program'], winner['fitness'], interpreter(winner['program'],
-    #    prog_buffer(BUFFER_SIZE))))
+    print("After {} iterations, selected: {}({}) -> {}".format(
+        gen, winner['program'], winner['fitness'], interpreter(winner['program'],
+        prog_buffer(len(target)))))
     return winner['program']
 
 
@@ -176,23 +174,6 @@ def evaluate_fitness(prog, target, interpreter):
     return fitness
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 def empty_target(length):
     return [0] * length
 
@@ -208,7 +189,7 @@ def print_prog(name, prog, target):
 
 from sys import argv
 if __name__ == "__main__":
-    winner = create_simple_program([0,0,3,4,5,6,7,8,9,10], interpret)
+    winner = create_simple_program([1,2,3,4,5,6,7,8,9,10], interpret)
     #buf = prog_buffer(BUFFER_SIZE)
     #result = interpret(argv[1], buf)
     #print(result)
