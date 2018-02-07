@@ -193,7 +193,7 @@ def crossover(program_x, program_y):
 
 def evaluate_fitness(prog, target, interpreter):
     result = prog_buffer(len(target))
-    interpreter(prog, prog_buffer(len(target)))
+    interpreter(prog, result)
     fitness = 0
     for i in range(0, len(target)):
         fitness += abs(result[i] - target[i])
