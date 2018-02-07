@@ -9,11 +9,9 @@ import pdb
 import math
 
 
-CROSS_WEIGHT = 0.4
 SIMPLE_LANGUAGE = ('>', '<', '+', '-')
 LANGUAGE = ('>', '<', '+', '-', '[', ']')
-STARTING_POP = 10000
-NUM_GENERATIONS = 10000
+NUM_GENERATIONS = 500
 
 
 def prog_buffer(length):
@@ -72,12 +70,8 @@ def random_simple_progam(length):
 
 
 def select_random(population):
-    cutoff = random.uniform(0, 1)
-    total = 0
-    for i, member in enumerate(population):
-        total += member['fitness']
-        if total > cutoff:
-            return population.pop(i)
+    pos = random.randint(0, len(population) - 1)
+    return population.pop(pos)
 
 
 def normalize_population(population):
@@ -88,8 +82,8 @@ def normalize_population(population):
 
 def generate_population(size):
     population = []
-    min_len = 10
-    max_len = 25
+    min_len = 5
+    max_len = 30
     for i in range(0, size):
         length = random.randint(min_len, max_len)
         population.append(random_simple_progam(length))
@@ -107,15 +101,14 @@ def natural_select_pair(A, B):
     return min([A, B], key=lambda x: x['fitness'])
 
 
-# Remove 1/2 of the least 'fittest' from population
 def natural_select_pop(population):
     orig_size = len(population)
-    for _ in range(0, int(len(population)/2)):
+    for _ in range(0, int(0.25*len(population))):
         selected = max(population, key=lambda x: x['fitness'])
         population.remove(selected)
-    #while len(population) < orig_size:
-    #    clone = random.choice(population)
-    #    population.append(clone)
+    while len(population) < orig_size:
+        clone = random.choice(population)
+        population.append(clone)
 
 
 def select_crossover(population, target, interpreter):
@@ -147,6 +140,11 @@ def select_point_mutation(population, target, interpreter):
         'fitness': evaluate_fitness(cProg, target, interpreter)
     }
 
+def avg_fitness(population):
+    total = 0
+    for m in population:
+        total += m['fitness']
+    return total / len(population)
 
 def create_simple_program(target, interpreter):
     population = generate_population(2**8)
@@ -155,6 +153,7 @@ def create_simple_program(target, interpreter):
     #natural_select_pop(population)
     gen = 0
     while gen < NUM_GENERATIONS:
+        #print("Gen {} ({}) avg fitness: {}".format(gen, len(population), avg_fitness(population)))
         num_crossovers = int(0.1 * len(population))
         # run crossover mutations
         while num_crossovers > 0:
@@ -171,9 +170,9 @@ def create_simple_program(target, interpreter):
         natural_select_pop(population)
         gen += 1
     winner = population[0]
-    print("After {} iterations, selected: {}({}) -> {}".format(
-        gen, winner['program'], winner['fitness'], interpreter(winner['program'],
-        prog_buffer(len(target)))))
+    #print("After {} iterations, selected: {}({}) -> {}".format(
+    #    gen, winner['program'], winner['fitness'], interpreter(winner['program'],
+    #    prog_buffer(len(target)))))
     return winner['program']
 
 
@@ -181,7 +180,8 @@ def crossover(program_x, program_y):
     childX = list(program_x)
     childY = list(program_y)
     if len(childX) < 3 or len(childY) < 3:
-        raise Exception("Programs too short to crossover: {}, {}".format(len(childX), len(childY)))
+        #raise Exception("Programs too short to crossover: {}, {}".format(len(childX), len(childY)))
+        return program_x, program_y 
     maxPos = min(len(program_x), len(program_y))-2
     crossIndex = int(random.uniform(2, maxPos))
     swap = childX[0 : crossIndex]
@@ -194,8 +194,7 @@ def crossover(program_x, program_y):
     return childX, childY
 
 def evaluate_fitness(prog, target, interpreter):
-    buf = prog_buffer(len(target))
-    result = interpreter(prog, buf)
+    result = interpreter(prog, prog_buffer(len(target)))
     fitness = 0
     for i in range(0, len(target)):
         fitness += abs(result[i] - target[i])
@@ -203,6 +202,8 @@ def evaluate_fitness(prog, target, interpreter):
 
 
 
+"""
 from sys import argv
 if __name__ == "__main__":
-    winner = create_simple_program([1,2,3,4,5], interpret)
+    winner = create_simple_program([7,7,7], interpret)
+""
