@@ -10,7 +10,6 @@ import math
 
 
 class InvalidSymbol(Exception):
-
     def __init__(self, msg):
         self.msg =  msg
 
@@ -91,13 +90,11 @@ def select(population):
             return population.pop(i)
 
 def normalize_population(population):
-    # O(2n)
     total_fitness = sum([m['fitness'] for m in population])
     for m in population:
         m['score'] = total_fitness - m['fitness']
 
 def generate_population(size):
-    # O(n)
     population = []
     for i in range(0, size):
         length = random.randint(MIN_LEN, MAX_LEN)
@@ -106,14 +103,12 @@ def generate_population(size):
 
 
 def calculate_fitness(population, target, interpreter):
-    # O(n)
     for member in population:
         member['fitness'] = evaluate_fitness(
             member['program'], target, interpreter
         )
 
 def natural_select_pair(A, B):
-    # O(1)
     return min([A, B], key=lambda x: x['fitness'])
 
 
@@ -122,6 +117,7 @@ def natural_select_pop(population):
     for _ in range(0, int(len(population)/2)):
         selected = max(population, key=lambda x: x['fitness'])
         population.remove(selected)
+
 
 def selectCrossover(population, target, interpreter):
     progX = select(population)
@@ -142,7 +138,6 @@ def selectCrossover(population, target, interpreter):
 def create_simple_program(target, interpreter):
     population = generate_population(2**8)
     calculate_fitness(population, target, interpreter)
-    #normalize_population(population)
     natural_select_pop(population)
     gen = 0
     while len(population) > 1:
@@ -152,22 +147,18 @@ def create_simple_program(target, interpreter):
             population.append(c1)
             population.append(c2)
             numCrossovers -= 1
-        #normalize_population(population)
         natural_select_pop(population)
         gen += 1
     winner = population[0]
     print("After {} iterations, selected: {}({}) -> {}".format(
         gen, winner['program'], winner['fitness'], interpreter(winner['program'],
-        prog_buffer(BUFFER_SIZE))))
+        prog_buffer(len(target)))))
     return winner['program']
-
 
 
 def crossover(program_x, program_y):
     childX = list(program_x)
     childY = list(program_y)
-    a = ''.join(childX)
-    b = ''.join(childY)
     if len(childX) < 3 or len(childY) < 3:
         raise Exception("Programs too short to crossover: {}, {}".format(len(childX), len(childY)))
     maxPos = min(len(program_x), len(program_y))-2
@@ -177,23 +168,17 @@ def crossover(program_x, program_y):
     childY[0 : crossIndex] = swap
     childX = ''.join(childX)
     childY = ''.join(childY)
-    #print("{} -> {} ({})".format(a, childX, crossIndex))
-    #print("{} -> {} ({})".format(b, childY, crossIndex))
+    #print("{} -> {} ({})".format(program_x, childX, crossIndex))
+    #print("{} -> {} ({})".format(program_y, childY, crossIndex))
     #print()
     return childX, childY
 
 def evaluate_fitness(prog, target, interpreter):
-    buf = prog_buffer(BUFFER_SIZE)
+    buf = prog_buffer(len(target))
     result = interpreter(prog, buf)
-
     fitness = 0
-    for i in range(0, max(len(target), len(result))):
-        if i < len(result) and i < len(target):
-            fitness += abs(result[i] - target[i])
-        elif i < len(result):
-            fitness += abs(result[i])
-        else:
-            fitness += abs(target[i])
+    for i in range(0, len(target)):
+        fitness += abs(result[i] - target[i])
     return fitness
 
 
@@ -213,10 +198,10 @@ def print_prog(name, prog, target):
 
 from sys import argv
 if __name__ == "__main__":
-    #winner = create_simple_program([1,2,3,4,5,6,7,8,9,10], interpret)
-    buf = prog_buffer(BUFFER_SIZE)
-    result = interpret(argv[1], buf)
-    print(result)
+    winner = create_simple_program([1,2,3,4,5,6,7,8,9,10], interpret)
+    #buf = prog_buffer(BUFFER_SIZE)
+    #result = interpret(argv[1], buf)
+    #print(result)
 
 
 
