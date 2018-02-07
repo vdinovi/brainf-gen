@@ -13,7 +13,7 @@ CROSS_WEIGHT = 0.4
 SIMPLE_LANGUAGE = ('>', '<', '+', '-')
 LANGUAGE = ('>', '<', '+', '-', '[', ']')
 STARTING_POP = 10000
-NUM_GENERATIONS = 1000
+NUM_GENERATIONS = 10000
 
 
 def prog_buffer(length):
@@ -132,7 +132,6 @@ def select_crossover(population, target, interpreter):
     } 
     return childX, childY
 
-"""
 def substitute_mutation(prog):
     pos = random.randint(0, len(prog) - 1)
     prog = list(prog)
@@ -147,7 +146,6 @@ def select_point_mutation(population, target, interpreter):
         'program': cProg,
         'fitness': evaluate_fitness(cProg, target, interpreter)
     }
-"""
 
 
 def create_simple_program(target, interpreter):
@@ -156,8 +154,7 @@ def create_simple_program(target, interpreter):
     #normalize_population(population)
     #natural_select_pop(population)
     gen = 0
-    #while gen < NUM_GENERATIONS:
-    while len(population) > 1:
+    while gen < NUM_GENERATIONS:
         num_crossovers = int(0.1 * len(population))
         # run crossover mutations
         while num_crossovers > 0:
@@ -167,12 +164,10 @@ def create_simple_program(target, interpreter):
             num_crossovers -= 1
         num_point_mutations = int(0.25 * len(population))
         # run point mutations (sub)
-        """
         while num_point_mutations > 0:
             child = select_point_mutation(population, target, interpreter)
             population.append(child)
             num_point_mutations -= 1
-        """
         natural_select_pop(population)
         gen += 1
     winner = population[0]
@@ -211,6 +206,3 @@ def evaluate_fitness(prog, target, interpreter):
 from sys import argv
 if __name__ == "__main__":
     winner = create_simple_program([1,2,3,4,5], interpret)
-    #buf = prog_buffer(BUFFER_SIZE)
-    #result = interpret(argv[1], buf)
-    #print(result)
