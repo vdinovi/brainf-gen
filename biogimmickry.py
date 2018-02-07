@@ -9,14 +9,11 @@ import pdb
 import math
 
 
-MIN_LEN = 5
-MAX_LEN = 10
 CROSS_WEIGHT = 0.4
 SIMPLE_LANGUAGE = ('>', '<', '+', '-')
 LANGUAGE = ('>', '<', '+', '-', '[', ']')
-BUFFER_SIZE = 100
 STARTING_POP = 10000
-NUM_GENERATIONS = 10000
+NUM_GENERATIONS = 1000
 
 
 def prog_buffer(length):
@@ -91,8 +88,10 @@ def normalize_population(population):
 
 def generate_population(size):
     population = []
+    min_len = 10
+    max_len = 25
     for i in range(0, size):
-        length = random.randint(MIN_LEN, MAX_LEN)
+        length = random.randint(min_len, max_len)
         population.append(random_simple_progam(length))
     return population
 
@@ -114,9 +113,9 @@ def natural_select_pop(population):
     for _ in range(0, int(len(population)/2)):
         selected = max(population, key=lambda x: x['fitness'])
         population.remove(selected)
-    while len(population) < orig_size:
-        clone = random.choice(population)
-        population.append(clone)
+    #while len(population) < orig_size:
+    #    clone = random.choice(population)
+    #    population.append(clone)
 
 
 def select_crossover(population, target, interpreter):
@@ -133,13 +132,12 @@ def select_crossover(population, target, interpreter):
     } 
     return childX, childY
 
+"""
 def substitute_mutation(prog):
     pos = random.randint(0, len(prog) - 1)
     prog = list(prog)
     prog[pos] = random.choice(SIMPLE_LANGUAGE)
     return ''.join(prog)
-
-
 
 
 def select_point_mutation(population, target, interpreter):
@@ -149,6 +147,7 @@ def select_point_mutation(population, target, interpreter):
         'program': cProg,
         'fitness': evaluate_fitness(cProg, target, interpreter)
     }
+"""
 
 
 def create_simple_program(target, interpreter):
@@ -157,7 +156,8 @@ def create_simple_program(target, interpreter):
     #normalize_population(population)
     #natural_select_pop(population)
     gen = 0
-    while gen < NUM_GENERATIONS:
+    #while gen < NUM_GENERATIONS:
+    while len(population) > 1:
         num_crossovers = int(0.1 * len(population))
         # run crossover mutations
         while num_crossovers > 0:
@@ -167,10 +167,12 @@ def create_simple_program(target, interpreter):
             num_crossovers -= 1
         num_point_mutations = int(0.25 * len(population))
         # run point mutations (sub)
+        """
         while num_point_mutations > 0:
             child = select_point_mutation(population, target, interpreter)
             population.append(child)
             num_point_mutations -= 1
+        """
         natural_select_pop(population)
         gen += 1
     winner = population[0]
