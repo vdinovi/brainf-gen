@@ -59,7 +59,6 @@ def interpret(prog, array):
             if array[dp]:
                 pc = jump_backward(prog, pc)
         pc += 1
-    return array
 
 
 def random_simple_progam(length):
@@ -153,7 +152,7 @@ def create_simple_program(target, interpreter):
     #natural_select_pop(population)
     gen = 0
     while gen < NUM_GENERATIONS:
-        #print("Gen {} ({}) avg fitness: {}".format(gen, len(population), avg_fitness(population)))
+        print("Gen {} ({}) avg fitness: {}".format(gen, len(population), avg_fitness(population)))
         num_crossovers = int(0.1 * len(population))
         # run crossover mutations
         while num_crossovers > 0:
@@ -170,9 +169,10 @@ def create_simple_program(target, interpreter):
         natural_select_pop(population)
         gen += 1
     winner = population[0]
-    #print("After {} iterations, selected: {}({}) -> {}".format(
-    #    gen, winner['program'], winner['fitness'], interpreter(winner['program'],
-    #    prog_buffer(len(target)))))
+    result = prog_buffer(len(target))
+    interpreter(winner['program'], result)
+    print("After {} iterations, selected: {}({}) -> {}".format(
+        gen, winner['program'], winner['fitness'], result))
     return winner['program']
 
 
@@ -189,12 +189,11 @@ def crossover(program_x, program_y):
     childY[0 : crossIndex] = swap
     childX = ''.join(childX)
     childY = ''.join(childY)
-    #print("{} -> {} ({})".format(program_x, childX, crossIndex))
-    #print("{} -> {} ({})".format(program_y, childY, crossIndex))
     return childX, childY
 
 def evaluate_fitness(prog, target, interpreter):
-    result = interpreter(prog, prog_buffer(len(target)))
+    result = prog_buffer(len(target))
+    interpreter(prog, prog_buffer(len(target)))
     fitness = 0
     for i in range(0, len(target)):
         fitness += abs(result[i] - target[i])
@@ -202,8 +201,6 @@ def evaluate_fitness(prog, target, interpreter):
 
 
 
-"""
 from sys import argv
 if __name__ == "__main__":
     winner = create_simple_program([7,7,7], interpret)
-""
