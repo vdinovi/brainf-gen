@@ -9,18 +9,13 @@ import pdb
 import math
 
 
-class InvalidSymbol(Exception):
-    def __init__(self, msg):
-        self.msg =  msg
-
-
 MIN_LEN = 5
 MAX_LEN = 10
 CROSS_WEIGHT = 0.4
 SIMPLE_LANGUAGE = ('>', '<', '+', '-')
 LANGUAGE = ('>', '<', '+', '-', '[', ']')
-BUFFER_SIZE = 10
-STARTING_POP = 10
+BUFFER_SIZE = 100
+STARTING_POP = 10000
 ITERATIONS = 20
 
 
@@ -118,12 +113,10 @@ def natural_select_pop(population):
         selected = max(population, key=lambda x: x['fitness'])
         population.remove(selected)
 
-
 def selectCrossover(population, target, interpreter):
     progX = select(population)
     progY = select(population)
-    cProgX, cProgY = \
-        crossover(progX['program'], progY['program'])
+    cProgX, cProgY = crossover(progX['program'], progY['program'])
     childX = {
         'program': cProgX,
         'fitness': evaluate_fitness(cProgX, target, interpreter)
@@ -136,9 +129,10 @@ def selectCrossover(population, target, interpreter):
 
 
 def create_simple_program(target, interpreter):
-    population = generate_population(2**8)
+    population = generate_population(2**4)
     calculate_fitness(population, target, interpreter)
-    natural_select_pop(population)
+    #normalize_population(population)
+    #natural_select_pop(population)
     gen = 0
     while len(population) > 1:
         numCrossovers = math.sqrt(len(population))
@@ -150,9 +144,9 @@ def create_simple_program(target, interpreter):
         natural_select_pop(population)
         gen += 1
     winner = population[0]
-    print("After {} iterations, selected: {}({}) -> {}".format(
-        gen, winner['program'], winner['fitness'], interpreter(winner['program'],
-        prog_buffer(len(target)))))
+    #print("After {} iterations, selected: {}({}) -> {}".format(
+    #    gen, winner['program'], winner['fitness'], interpreter(winner['program'],
+    #    prog_buffer(BUFFER_SIZE))))
     return winner['program']
 
 
@@ -182,6 +176,23 @@ def evaluate_fitness(prog, target, interpreter):
     return fitness
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 def empty_target(length):
     return [0] * length
 
@@ -195,10 +206,9 @@ def print_prog(name, prog, target):
     )
 
 
-
 from sys import argv
 if __name__ == "__main__":
-    winner = create_simple_program([1,2,3,4,5,6,7,8,9,10], interpret)
+    winner = create_simple_program([0,0,3,4,5,6,7,8,9,10], interpret)
     #buf = prog_buffer(BUFFER_SIZE)
     #result = interpret(argv[1], buf)
     #print(result)
