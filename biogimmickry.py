@@ -5,17 +5,12 @@
 # Term:         Winter 2018
 
 import random
-import pdb
 import math
-
-
-SIMPLE_LANGUAGE = ('>', '<', '+', '-')
-LANGUAGE = ('>', '<', '+', '-', '[', ']')
-NUM_GENERATIONS = 200
 
 
 def prog_buffer(length):
     return [0] * length
+
 
 def jump_forward(prog, pc):
     count = 1
@@ -27,6 +22,7 @@ def jump_forward(prog, pc):
             count -= 1
         i += 1
     return i - 1
+
 
 def jump_backward(prog, pc):
     count = 1
@@ -62,8 +58,9 @@ def interpret(prog, array):
 
 
 def random_simple_progam(length):
+    lang = ('>', '<', '+', '-')
     return {
-        'program': ''.join([random.choice(SIMPLE_LANGUAGE) for _ in range(0, length)]),
+        'program': ''.join([random.choice(lang) for _ in range(0, length)]),
         'fitness': -1
     }
 
@@ -78,15 +75,18 @@ def normalize_population(population):
     for m in population:
         m['score'] = total_fitness - m['fitness']
 
+
 def min_length(target):
     count = 0
     for i in range(0, len(target)):
         count += i + target[i]
     return count
 
+
 def generate_population(size, target):
+    max_multiplier = 8
     min_l = min_length(target)
-    max_l = min_l * 4
+    max_l = min_l * max_multiplier
     population = []
     for i in range(0, size):
         length = random.randint(min_l, max_l)
@@ -102,13 +102,14 @@ def calculate_fitness(population, target, interpreter):
 
 
 def natural_select_pair(A, B):
-    return min([A, B], key=lambda x: x['fitness'])
+    return min([A, B], key = lambda x: x['fitness'])
 
 
 def natural_select_pop(population):
     orig_size = len(population)
-    for _ in range(0, int(0.25*len(population))):
-        selected = max(population, key=lambda x: x['fitness'])
+    lower_percentile = 0.25
+    for _ in range(0, int(lower_percentile * len(population))):
+        selected = max(population, key = lambda x: x['fitness'])
         population.remove(selected)
     while len(population) < orig_size:
         clone = random.choice(population)
@@ -129,10 +130,12 @@ def select_crossover(population, target, interpreter):
     } 
     return childX, childY
 
+
 def substitute_mutation(prog):
     pos = random.randint(0, len(prog) - 1)
     prog = list(prog)
-    prog[pos] = random.choice(SIMPLE_LANGUAGE)
+    lang = ('>', '<', '+', '-')
+    prog[pos] = random.choice(lang)
     return ''.join(prog)
 
 
@@ -144,28 +147,34 @@ def select_point_mutation(population, target, interpreter):
         'fitness': evaluate_fitness(cProg, target, interpreter)
     }
 
+
 def avg_fitness(population):
     total = 0
     for m in population:
         total += m['fitness']
     return total / len(population)
 
+
 def create_simple_program(target, interpreter):
-    population = generate_population(2**8, target)
+    pop_size = 256
+    population = generate_population(pop_size, target)
     calculate_fitness(population, target, interpreter)
     #normalize_population(population)
     #natural_select_pop(population)
     gen = 0
-    while gen < NUM_GENERATIONS:
-        print("Gen {} ({}) avg fitness: {}".format(gen, len(population), avg_fitness(population)))
-        num_crossovers = int(0.1 * len(population))
+    num_gens = 250
+    while gen < num_gens:
+        #print("Gen {} ({}) avg fitness: {}".format(gen, len(population), avg_fitness(population)))
+        crossover_prop = 0.1
+        num_crossovers = int(crossover_prop * len(population))
         # run crossover mutations
         while num_crossovers > 0:
             c1, c2 = select_crossover(population, target, interpreter)
             population.append(c1)
             population.append(c2)
             num_crossovers -= 1
-        num_point_mutations = int(0.25 * len(population))
+        point_mut_prop = 0.25
+        num_point_mutations = int(point_mut_prop * len(population))
         # run point mutations (sub)
         while num_point_mutations > 0:
             child = select_point_mutation(population, target, interpreter)
@@ -174,28 +183,24 @@ def create_simple_program(target, interpreter):
         natural_select_pop(population)
         gen += 1
     winner = population[0]
-    result = prog_buffer(len(target))
-    interpreter(winner['program'], result)
-    print("After {} iterations, selected: {}({}) -> {}".format(
-        gen, winner['program'], winner['fitness'], result))
+    #result = prog_buffer(len(target))
+    #interpreter(winner['program'], result)
+    #print("After {} iterations, selected: {}({}) -> {}".format(
+    #    gen, winner['program'], winner['fitness'], result))
     return winner['program']
 
 
 def crossover(program_x, program_y):
-    childX = list(program_x)
-    childY = list(program_y)
-    if len(childX) < 3 or len(childY) < 3:
-        #raise Exception("Programs too short to crossover: {}, {}".format(len(childX), len(childY)))
-        return program_x, program_y 
-    maxPos = min(len(program_x), len(program_y))-2
-    crossIndex = int(random.uniform(2, maxPos))
-    swap = childX[0 : crossIndex]
-    childX[0 : crossIndex] = program_y[0 : crossIndex]
-    childY[0 : crossIndex] = swap
-    childX = ''.join(childX)
-    childY = ''.join(childY)
-    #print("{} -> {}\n{} -> {}".format(program_x, childX, program_y, childY))
-    return childX, childY
+    child_x = list(program_x)
+    child_y = list(program_y)
+    max_pos = min(len(program_x), len(program_y)) - 2
+    cross1 = int(random.uniform(2, max_pos))
+    cross2 = int(random.uniform(2, max_pos))
+    new_child_x = ''.join(child_y[0 : cross2] + child_x[cross1 : len(child_x)])
+    new_child_y = ''.join(child_x[0 : cross1] + child_y[cross2 : len(child_y)])
+    #print("{} ({})-> {}\n{} ({})-> {}\n".format(program_x, cross1, new_child_x, program_y, cross2, new_child_y))
+    return new_child_x, new_child_y
+
 
 def evaluate_fitness(prog, target, interpreter):
     result = prog_buffer(len(target))
@@ -205,8 +210,3 @@ def evaluate_fitness(prog, target, interpreter):
         fitness += abs(result[i] - target[i])
     return fitness
 
-
-
-from sys import argv
-if __name__ == "__main__":
-    winner = create_simple_program([7,7,7], interpret)
