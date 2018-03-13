@@ -6,6 +6,7 @@
 
 import random
 import math
+import pdb
 
 
 def prog_buffer(length):
@@ -57,10 +58,15 @@ def interpret(prog, array):
         pc += 1
 
 
-def random_simple_progam(length):
+def random_progam(length):
     lang = ('>', '<', '+', '-')
+    prog = [random.choice(lang) for _ in range(0, length - 1)]
+    #start = int(random.uniform(2, length))
+    #end = int(random.uniform(start + 1, length))
+    #prog[start] = '['
+    #prog[end] = ']'
     return {
-        'program': ''.join([random.choice(lang) for _ in range(0, length)]),
+        'program': ''.join(prog),
         'fitness': -1
     }
 
@@ -83,14 +89,13 @@ def min_length(target):
     return count
 
 
-def generate_population(size, target):
-    max_multiplier = 8
+def generate_population(size, target, limit):
     min_l = min_length(target)
-    max_l = min_l * max_multiplier
+    max_l = limit
     population = []
     for i in range(0, size):
         length = random.randint(min_l, max_l)
-        population.append(random_simple_progam(length))
+        population.append(random_progam(length))
     return population
 
 
@@ -155,16 +160,34 @@ def avg_fitness(population):
     return total / len(population)
 
 
-def create_simple_program(target, interpreter):
+def crossover(program_x, program_y):
+    child_x = list(program_x)
+    child_y = list(program_y)
+    max_pos = min(len(program_x), len(program_y)) - 2
+    cross1 = int(random.uniform(2, max_pos))
+    cross2 = int(random.uniform(2, max_pos))
+    new_child_x = ''.join(child_y[0 : cross2] + child_x[cross1 : len(child_x)])
+    new_child_y = ''.join(child_x[0 : cross1] + child_y[cross2 : len(child_y)])
+    print("{} ({})-> {}\n{} ({})-> {}\n".format(program_x, cross1, new_child_x, program_y, cross2, new_child_y))
+    return new_child_x, new_child_y
+
+
+def evaluate_fitness(prog, target, interpreter):
+    result = prog_buffer(len(target))
+    interpreter(prog, result)
+    fitness = 0
+    for i in range(0, len(target)):
+        fitness += abs(result[i] - target[i])
+    return fitness
+
+
+def create_iterative_program(target, interpreter, limit):
     pop_size = 256
-    population = generate_population(pop_size, target)
+    population = generate_population(pop_size, target, limit)
     calculate_fitness(population, target, interpreter)
-    #normalize_population(population)
-    #natural_select_pop(population)
     gen = 0
-    num_gens = 250
+    num_gens = 500
     while gen < num_gens:
-        #print("Gen {} ({}) avg fitness: {}".format(gen, len(population), avg_fitness(population)))
         crossover_prop = 0.1
         num_crossovers = int(crossover_prop * len(population))
         # run crossover mutations
@@ -183,30 +206,25 @@ def create_simple_program(target, interpreter):
         natural_select_pop(population)
         gen += 1
     winner = population[0]
-    #result = prog_buffer(len(target))
-    #interpreter(winner['program'], result)
-    #print("After {} iterations, selected: {}({}) -> {}".format(
-    #    gen, winner['program'], winner['fitness'], result))
+    result = prog_buffer(len(target))
+    interpreter(winner['program'], result)
+    print("After {} iterations, selected: {}({}) -> {}".format(
+        gen, winner['program'], winner['fitness'], result))
     return winner['program']
 
 
-def crossover(program_x, program_y):
-    child_x = list(program_x)
-    child_y = list(program_y)
-    max_pos = min(len(program_x), len(program_y)) - 2
-    cross1 = int(random.uniform(2, max_pos))
-    cross2 = int(random.uniform(2, max_pos))
-    new_child_x = ''.join(child_y[0 : cross2] + child_x[cross1 : len(child_x)])
-    new_child_y = ''.join(child_x[0 : cross1] + child_y[cross2 : len(child_y)])
-    #print("{} ({})-> {}\n{} ({})-> {}\n".format(program_x, cross1, new_child_x, program_y, cross2, new_child_y))
-    return new_child_x, new_child_y
+from sys import argv
+def main():
+    limit = 50
+    if len(argv) != 2:
+        print("python biogimmickry <target>")
+        return
+
+    target = [int(c) for c in argv[1].split(',')]
+    prog = create_iterative_program(target, interpret, limit)
 
 
-def evaluate_fitness(prog, target, interpreter):
-    result = prog_buffer(len(target))
-    interpreter(prog, result)
-    fitness = 0
-    for i in range(0, len(target)):
-        fitness += abs(result[i] - target[i])
-    return fitness
 
+
+if __name__ == "__main__":
+    main()
