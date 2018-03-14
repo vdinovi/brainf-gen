@@ -37,10 +37,11 @@ def jump_backward(prog, pc):
     return i + 1
 
 
-def interpret(prog, array):
+def interpret(prog, array, limit):
+    cycles = 0
     dp = 0
     pc = 0
-    while pc < len(prog):
+    while pc < len(prog) and cycles < limit:
         if prog[pc] == '>' and dp < len(array) - 1:
             dp += 1
         elif prog[pc] == '<' and dp > 0:
@@ -56,15 +57,17 @@ def interpret(prog, array):
             if array[dp]:
                 pc = jump_backward(prog, pc)
         pc += 1
+        cycles += 1
+    return cycles
 
 
 def random_progam(length):
     lang = ('>', '<', '+', '-')
-    prog = [random.choice(lang) for _ in range(0, length - 1)]
-    #start = int(random.uniform(2, length))
-    #end = int(random.uniform(start + 1, length))
-    #prog[start] = '['
-    #prog[end] = ']'
+    prog = [random.choice(lang) for _ in range(0, length)]
+    start = int(random.uniform(1, length - 1))
+    end = int(random.uniform(start + 1, length - 1))
+    prog[start] = '['
+    prog[end] = ']'
     return {
         'program': ''.join(prog),
         'fitness': -1
@@ -85,7 +88,7 @@ def normalize_population(population):
 def min_length(target):
     count = 0
     for i in range(0, len(target)):
-        count += i + target[i]
+        count += i + abs(target[i])
     return count
 
 
@@ -138,6 +141,8 @@ def select_crossover(population, target, interpreter):
 
 def substitute_mutation(prog):
     pos = random.randint(0, len(prog) - 1)
+    while prog[pos] == '[' or prog[pos] == ']':
+        pos = random.randint(0, len(prog) - 1)
     prog = list(prog)
     lang = ('>', '<', '+', '-')
     prog[pos] = random.choice(lang)
@@ -164,6 +169,17 @@ def crossover(program_x, program_y):
     child_x = list(program_x)
     child_y = list(program_y)
     max_pos = min(len(program_x), len(program_y)) - 2
+    """
+    cross1 = int(random.uniform(2, max_pos))
+    while prog_x[cross1] == '[' or prog_x[cross1] == ']':
+        cross1 = int(random.uniform(2, max_pos))
+    if cross1 < program_x.index('['):
+        cross2 = int(random.uniform(2, cross1 - 1))
+    elif cross1 > program_x.index(']'):
+        cross2 = int(random.uniform(cross1 + 1, len(program_y - 2)))
+    else: 
+        cross2 = int(random.uniform(, len(program_y - 2)))
+    """
     cross1 = int(random.uniform(2, max_pos))
     cross2 = int(random.uniform(2, max_pos))
     new_child_x = ''.join(child_y[0 : cross2] + child_x[cross1 : len(child_x)])
@@ -174,20 +190,23 @@ def crossover(program_x, program_y):
 
 def evaluate_fitness(prog, target, interpreter):
     result = prog_buffer(len(target))
-    interpreter(prog, result)
-    fitness = 0
+    limit = 2 * sum(target)
+    cycles = interpreter(prog, result, limit)
+    fitness = cycles
     for i in range(0, len(target)):
         fitness += abs(result[i] - target[i])
+    print("eval fitness on: ", prog, " --> ", fitness)
     return fitness
 
 
 def create_iterative_program(target, interpreter, limit):
-    pop_size = 256
+    pop_size = 10
     population = generate_population(pop_size, target, limit)
     calculate_fitness(population, target, interpreter)
     gen = 0
-    num_gens = 500
+    num_gens = 20
     while gen < num_gens:
+        """
         crossover_prop = 0.1
         num_crossovers = int(crossover_prop * len(population))
         # run crossover mutations
@@ -196,6 +215,7 @@ def create_iterative_program(target, interpreter, limit):
             population.append(c1)
             population.append(c2)
             num_crossovers -= 1
+        """
         point_mut_prop = 0.25
         num_point_mutations = int(point_mut_prop * len(population))
         # run point mutations (sub)
@@ -207,7 +227,7 @@ def create_iterative_program(target, interpreter, limit):
         gen += 1
     winner = population[0]
     result = prog_buffer(len(target))
-    interpreter(winner['program'], result)
+    interpreter(winner['program'], result, limit)
     print("After {} iterations, selected: {}({}) -> {}".format(
         gen, winner['program'], winner['fitness'], result))
     return winner['program']
@@ -219,7 +239,6 @@ def main():
     if len(argv) != 2:
         print("python biogimmickry <target>")
         return
-
     target = [int(c) for c in argv[1].split(',')]
     prog = create_iterative_program(target, interpret, limit)
 
