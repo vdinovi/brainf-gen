@@ -166,47 +166,60 @@ def avg_fitness(population):
 
 
 def crossover(program_x, program_y):
+    print('Crossing :', program_x, '  :  ', program_y)
     child_x = list(program_x)
     child_y = list(program_y)
-    max_pos = min(len(program_x), len(program_y)) - 2
-    """
-    cross1 = int(random.uniform(2, max_pos))
-    while prog_x[cross1] == '[' or prog_x[cross1] == ']':
-        cross1 = int(random.uniform(2, max_pos))
-    if cross1 < program_x.index('['):
-        cross2 = int(random.uniform(2, cross1 - 1))
-    elif cross1 > program_x.index(']'):
-        cross2 = int(random.uniform(cross1 + 1, len(program_y - 2)))
-    else: 
-        cross2 = int(random.uniform(, len(program_y - 2)))
-    """
-    cross1 = int(random.uniform(2, max_pos))
-    cross2 = int(random.uniform(2, max_pos))
-    new_child_x = ''.join(child_y[0 : cross2] + child_x[cross1 : len(child_x)])
-    new_child_y = ''.join(child_x[0 : cross1] + child_y[cross2 : len(child_y)])
-    print("{} ({})-> {}\n{} ({})-> {}\n".format(program_x, cross1, new_child_x, program_y, cross2, new_child_y))
-    return new_child_x, new_child_y
+    choice = random.choice(['l', 'm', 'r'])
+    if choice == 'l':
+        segment = (child_x[0 : child_x.index('[')], \
+                   child_y[0 : child_y.index('[')])
+    elif choice == 'm':
+        segment = (child_x[child_x.index('[') + 1 : child_x.index(']') ], \
+                   child_y[child_y.index('[') + 1 : child_y.index(']') ])
+    else:
+        segment = (child_x[child_x.index(']') + 1 : len(child_x) ], \
+                   child_y[child_y.index(']') + 1 : len(child_y) ])
+    if not segment[0] or not segment[1]:
+        return program_x, program_y
+    print("Choice: ", choice)
+    cross1 = int(random.uniform(0, len(segment[0])))
+    cross2 = int(random.uniform(0, len(segment[1])))
+    new_x = segment[1][0 : cross2] + segment[0][cross1 : len(segment[0])]
+    new_y = segment[0][0 : cross1] + segment[1][cross2 : len(segment[1])]
+    if choice == 'l':
+        child_x = ''.join(new_x + child_x[child_x.index('[') : len(child_x)])
+        child_y = ''.join(new_y + child_y[child_y.index('[') : len(child_y)])
+    elif choice == 'm':
+        child_x = ''.join(child_x[0 : child_x.index('[') + 1] + new_x + \
+                          child_x[child_x.index(']') : len(child_x)])
+        child_y = ''.join(child_y[0 : child_y.index('[') + 1] + new_y + \
+                          child_y[child_y.index(']') : len(child_y)])
+    else:
+        child_x = ''.join(child_x[0 : child_x.index(']') + 1] + new_x)
+        child_y = ''.join(child_y[0 : child_x.index(']') + 1] + new_y)
+    print("({}) {} : {}\n({}) {} : {}\n".format(cross1, program_x, child_x, cross2, program_y, child_y))
+    return child_x, child_y
 
 
 def evaluate_fitness(prog, target, interpreter):
     result = prog_buffer(len(target))
     limit = 2 * sum(target)
+    print("eval fitness on: ", prog)
     cycles = interpreter(prog, result, limit)
     fitness = cycles
     for i in range(0, len(target)):
         fitness += abs(result[i] - target[i])
-    print("eval fitness on: ", prog, " --> ", fitness)
+    print("   ", fitness)
     return fitness
 
 
 def create_iterative_program(target, interpreter, limit):
-    pop_size = 10
+    pop_size = 256
     population = generate_population(pop_size, target, limit)
     calculate_fitness(population, target, interpreter)
     gen = 0
-    num_gens = 20
+    num_gens = 256
     while gen < num_gens:
-        """
         crossover_prop = 0.1
         num_crossovers = int(crossover_prop * len(population))
         # run crossover mutations
@@ -215,7 +228,6 @@ def create_iterative_program(target, interpreter, limit):
             population.append(c1)
             population.append(c2)
             num_crossovers -= 1
-        """
         point_mut_prop = 0.25
         num_point_mutations = int(point_mut_prop * len(population))
         # run point mutations (sub)
