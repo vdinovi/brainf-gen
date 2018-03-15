@@ -37,11 +37,13 @@ def jump_backward(prog, pc):
     return i + 1
 
 
-def interpret(prog, array, limit):
+def interpret(prog, array, max_steps):
     cycles = 0
     dp = 0
     pc = 0
-    while pc < len(prog) and cycles < limit:
+    while pc < len(prog):
+        if cycles > max_steps:
+            raise RuntimeError
         if prog[pc] == '>' and dp < len(array) - 1:
             dp += 1
         elif prog[pc] == '<' and dp > 0:
@@ -50,7 +52,7 @@ def interpret(prog, array, limit):
             array[dp] += 1
         elif prog[pc] == '-':
             array[dp] -= 1
-        elif prog[dp] == '[':
+        elif prog[pc] == '[':
             if not array[dp]:
                 pc = jump_forward(prog, pc)
         elif prog[pc] == ']':
@@ -58,16 +60,16 @@ def interpret(prog, array, limit):
                 pc = jump_backward(prog, pc)
         pc += 1
         cycles += 1
-    return cycles
 
 
 def random_progam(length):
     lang = ('>', '<', '+', '-')
     prog = [random.choice(lang) for _ in range(0, length)]
-    start = int(random.uniform(1, length - 1))
+    start = int(random.uniform(0, length - 1))
     end = int(random.uniform(start + 1, length - 1))
     prog[start] = '['
     prog[end] = ']'
+    prog.insert(end, random.choice(lang))
     return {
         'program': ''.join(prog),
         'fitness': -1
@@ -93,6 +95,7 @@ def min_length(target):
 
 
 def generate_population(size, target, limit):
+    pdb.set_trace()
     min_l = min_length(target)
     max_l = limit
     population = []
@@ -102,10 +105,10 @@ def generate_population(size, target, limit):
     return population
 
 
-def calculate_fitness(population, target, interpreter):
+def calculate_fitness(population, target, interpreter, limit):
     for member in population:
         member['fitness'] = evaluate_fitness(
-            member['program'], target, interpreter
+            member['program'], target, interpreter, limit
         )
 
 
@@ -124,37 +127,37 @@ def natural_select_pop(population):
         population.append(clone)
 
 
-def select_crossover(population, target, interpreter):
+def select_crossover(population, target, interpreter, limit):
     progX = select_random(population)
     progY = select_random(population)
     cProgX, cProgY = crossover(progX['program'], progY['program'])
     childX = {
         'program': cProgX,
-        'fitness': evaluate_fitness(cProgX, target, interpreter)
+        'fitness': evaluate_fitness(cProgX, target, interpreter, limit)
     } 
     childY = {
         'program': cProgY,
-        'fitness': evaluate_fitness(cProgY, target, interpreter)
+        'fitness': evaluate_fitness(cProgY, target, interpreter, limit)
     } 
     return childX, childY
 
 
 def substitute_mutation(prog):
     pos = random.randint(0, len(prog) - 1)
-    while prog[pos] == '[' or prog[pos] == ']':
-        pos = random.randint(0, len(prog) - 1)
+    if prog[pos] == '[' or prog[pos] == ']':
+        return ''.join(prog)
     prog = list(prog)
     lang = ('>', '<', '+', '-')
     prog[pos] = random.choice(lang)
     return ''.join(prog)
 
 
-def select_point_mutation(population, target, interpreter):
+def select_point_mutation(population, target, interpreter, limit):
     child = select_random(population)
     cProg = substitute_mutation(child['program'])
     return {
         'program': cProg,
-        'fitness': evaluate_fitness(cProg, target, interpreter)
+        'fitness': evaluate_fitness(cProg, target, interpreter, limit)
     }
 
 
@@ -166,7 +169,6 @@ def avg_fitness(population):
 
 
 def crossover(program_x, program_y):
-    print('Crossing :', program_x, '  :  ', program_y)
     child_x = list(program_x)
     child_y = list(program_y)
     choice = random.choice(['l', 'm', 'r'])
@@ -181,7 +183,6 @@ def crossover(program_x, program_y):
                    child_y[child_y.index(']') + 1 : len(child_y) ])
     if not segment[0] or not segment[1]:
         return program_x, program_y
-    print("Choice: ", choice)
     cross1 = int(random.uniform(0, len(segment[0])))
     cross2 = int(random.uniform(0, len(segment[1])))
     new_x = segment[1][0 : cross2] + segment[0][cross1 : len(segment[0])]
@@ -196,35 +197,40 @@ def crossover(program_x, program_y):
                           child_y[child_y.index(']') : len(child_y)])
     else:
         child_x = ''.join(child_x[0 : child_x.index(']') + 1] + new_x)
-        child_y = ''.join(child_y[0 : child_x.index(']') + 1] + new_y)
-    print("({}) {} : {}\n({}) {} : {}\n".format(cross1, program_x, child_x, cross2, program_y, child_y))
+        child_y = ''.join(child_y[0 : child_y.index(']') + 1] + new_y)
+    print("({}) {} : {}\n({}) {} : {}".format(cross1, program_x, child_x, cross2, program_y, child_y))
     return child_x, child_y
 
 
-def evaluate_fitness(prog, target, interpreter):
+def evaluate_fitness(prog, target, interpreter, limit):
     result = prog_buffer(len(target))
-    limit = 2 * sum(target)
-    print("eval fitness on: ", prog)
-    cycles = interpreter(prog, result, limit)
-    fitness = cycles
+    fitness = 0
+    try:
+        interpreter(prog, result, limit)
+    except RuntimeError:
+        fitness += 1000
+    if len(prog) > limit:
+        fitness += 1000
     for i in range(0, len(target)):
         fitness += abs(result[i] - target[i])
-    print("   ", fitness)
     return fitness
 
+import progressbar
 
 def create_iterative_program(target, interpreter, limit):
-    pop_size = 256
+    pop_size = 1000
     population = generate_population(pop_size, target, limit)
-    calculate_fitness(population, target, interpreter)
+    calculate_fitness(population, target, interpreter, limit)
     gen = 0
     num_gens = 256
+    #bar = progressbar.ProgressBar(max_value=num_gens)
     while gen < num_gens:
+        #bar.update(gen)
         crossover_prop = 0.1
         num_crossovers = int(crossover_prop * len(population))
         # run crossover mutations
         while num_crossovers > 0:
-            c1, c2 = select_crossover(population, target, interpreter)
+            c1, c2 = select_crossover(population, target, interpreter, limit)
             population.append(c1)
             population.append(c2)
             num_crossovers -= 1
@@ -232,7 +238,7 @@ def create_iterative_program(target, interpreter, limit):
         num_point_mutations = int(point_mut_prop * len(population))
         # run point mutations (sub)
         while num_point_mutations > 0:
-            child = select_point_mutation(population, target, interpreter)
+            child = select_point_mutation(population, target, interpreter, limit)
             population.append(child)
             num_point_mutations -= 1
         natural_select_pop(population)
@@ -247,11 +253,11 @@ def create_iterative_program(target, interpreter, limit):
 
 from sys import argv
 def main():
-    limit = 50
     if len(argv) != 2:
         print("python biogimmickry <target>")
         return
     target = [int(c) for c in argv[1].split(',')]
+    limit = int(sum(abs(e) for e in target) / 2)
     prog = create_iterative_program(target, interpret, limit)
 
 
