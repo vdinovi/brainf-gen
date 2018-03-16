@@ -95,12 +95,9 @@ def min_length(target):
 
 
 def generate_population(size, target, limit):
-    pdb.set_trace()
-    min_l = min_length(target)
-    max_l = limit
     population = []
     for i in range(0, size):
-        length = random.randint(min_l, max_l)
+        length = random.randint(2, limit)
         population.append(random_progam(length))
     return population
 
@@ -143,13 +140,32 @@ def select_crossover(population, target, interpreter, limit):
 
 
 def substitute_mutation(prog):
+    prog = list(prog)
+    lang = ('>', '<', '+', '-')
     pos = random.randint(0, len(prog) - 1)
     if prog[pos] == '[' or prog[pos] == ']':
         return ''.join(prog)
-    prog = list(prog)
-    lang = ('>', '<', '+', '-')
     prog[pos] = random.choice(lang)
     return ''.join(prog)
+
+
+def loop_insert_mutation(prog, limit):
+    prog = list(prog)
+    lang = ('>', '<', '+', '-')
+    start = prog.index('[')
+    end = prog.index(']')
+    pos = random.choice(range(start + 1, end + 1))
+    prog.insert(pos, random.choice(lang))
+    return ''.join(prog)
+
+
+def select_loop_insert_mutation(population, target, interpreter, limit):
+    child = select_random(population)
+    cProg = loop_insert_mutation(child['program'], limit)
+    return {
+        'program': cProg,
+        'fitness': evaluate_fitness(cProg, target, interpreter, limit)
+    }
 
 
 def select_point_mutation(population, target, interpreter, limit):
@@ -198,7 +214,7 @@ def crossover(program_x, program_y):
     else:
         child_x = ''.join(child_x[0 : child_x.index(']') + 1] + new_x)
         child_y = ''.join(child_y[0 : child_y.index(']') + 1] + new_y)
-    print("({}) {} : {}\n({}) {} : {}".format(cross1, program_x, child_x, cross2, program_y, child_y))
+    #print("({}) {} : {}\n({}) {} : {}".format(cross1, program_x, child_x, cross2, program_y, child_y))
     return child_x, child_y
 
 
@@ -213,6 +229,8 @@ def evaluate_fitness(prog, target, interpreter, limit):
         fitness += 1000
     for i in range(0, len(target)):
         fitness += abs(result[i] - target[i])
+    fitness += len(target)
+    print(prog, ' -> ', fitness)
     return fitness
 
 import progressbar
@@ -222,25 +240,35 @@ def create_iterative_program(target, interpreter, limit):
     population = generate_population(pop_size, target, limit)
     calculate_fitness(population, target, interpreter, limit)
     gen = 0
-    num_gens = 256
+    num_gens = 1000
+    crossover_prop = 0.1
+    point_mut_prop = 0.25
+    loop_insert_mut_prop = 0.5
     #bar = progressbar.ProgressBar(max_value=num_gens)
     while gen < num_gens:
+        #print("======= GEN {} ==========".format(gen))
         #bar.update(gen)
-        crossover_prop = 0.1
-        num_crossovers = int(crossover_prop * len(population))
         # run crossover mutations
+        num_crossovers = int(crossover_prop * len(population))
         while num_crossovers > 0:
             c1, c2 = select_crossover(population, target, interpreter, limit)
             population.append(c1)
             population.append(c2)
             num_crossovers -= 1
-        point_mut_prop = 0.25
+        # run point mutations
         num_point_mutations = int(point_mut_prop * len(population))
-        # run point mutations (sub)
         while num_point_mutations > 0:
-            child = select_point_mutation(population, target, interpreter, limit)
+            child = select_point_mutation(population, target, \
+                                          interpreter, limit)
             population.append(child)
             num_point_mutations -= 1
+        # run loop insert mutations
+        num_loop_insert_mutations = int(point_mut_prop * len(population))
+        while num_loop_insert_mutations > 0:
+            child = select_loop_insert_mutation(population, target, \
+                                                interpreter, limit)
+            population.append(child)
+            num_loop_insert_mutations -= 1
         natural_select_pop(population)
         gen += 1
     winner = population[0]
@@ -253,11 +281,11 @@ def create_iterative_program(target, interpreter, limit):
 
 from sys import argv
 def main():
-    if len(argv) != 2:
-        print("python biogimmickry <target>")
+    if len(argv) != 3:
+        print("python biogimmickry <target> <limit>")
         return
     target = [int(c) for c in argv[1].split(',')]
-    limit = int(sum(abs(e) for e in target) / 2)
+    limit = int(argv[2])
     prog = create_iterative_program(target, interpret, limit)
 
 
