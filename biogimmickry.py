@@ -4,6 +4,10 @@
 # Assignment:   Biogimmickry
 # Term:         Winter 2018
 
+# Note: not complete, tried playing around with fitness function
+#       to overcome various problems. 
+#       Ended up giving up in favor of studying for finals.
+
 import random
 import math
 import pdb
@@ -70,6 +74,7 @@ def random_progam(length):
     prog[start] = '['
     prog[end] = ']'
     prog.insert(end, random.choice(lang))
+    prog.insert(0, '+')
     return {
         'program': ''.join(prog),
         'fitness': -1
@@ -115,7 +120,7 @@ def natural_select_pair(A, B):
 
 def natural_select_pop(population):
     orig_size = len(population)
-    lower_percentile = 0.25
+    lower_percentile = 0.15
     for _ in range(0, int(lower_percentile * len(population))):
         selected = max(population, key = lambda x: x['fitness'])
         population.remove(selected)
@@ -150,6 +155,8 @@ def substitute_mutation(prog):
 
 
 def loop_insert_mutation(prog, limit):
+    if len(prog) + 1 > limit:
+        return prog
     prog = list(prog)
     lang = ('>', '<', '+', '-')
     start = prog.index('[')
@@ -230,7 +237,13 @@ def evaluate_fitness(prog, target, interpreter, limit):
     for i in range(0, len(target)):
         fitness += abs(result[i] - target[i])
     fitness += len(target)
-    print(prog, ' -> ', fitness)
+    #loop_center = int((prog.index('[') + prog.index(']')) / 2)
+    #prog_center = int(len(target) / 2)
+    # Encourage loop in later part of program
+    fitness += len(target) - prog.index('[')
+    #fitness += prog.index(']') - prog.index(']') / 2
+    #fitness += int((prog.index('[') - 0) / 2)
+    #print(prog, ' -> ', fitness)
     return fitness
 
 import progressbar
@@ -281,11 +294,11 @@ def create_iterative_program(target, interpreter, limit):
 
 from sys import argv
 def main():
-    if len(argv) != 3:
-        print("python biogimmickry <target> <limit>")
+    if len(argv) != 2:
+        print("python biogimmickry <target>")
         return
     target = [int(c) for c in argv[1].split(',')]
-    limit = int(argv[2])
+    limit = int(sum(abs(x) for x in target) / 2)
     prog = create_iterative_program(target, interpret, limit)
 
 
