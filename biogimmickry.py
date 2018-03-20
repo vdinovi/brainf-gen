@@ -10,7 +10,6 @@
 
 import random
 import math
-import pdb
 
 
 def prog_buffer(length):
@@ -228,12 +227,13 @@ def crossover(program_x, program_y):
 def evaluate_fitness(prog, target, interpreter, limit):
     result = prog_buffer(len(target))
     fitness = 0
+    penalty = 100
     try:
         interpreter(prog, result, limit)
     except RuntimeError:
-        fitness += 1000
+        fitness += penalty
     if len(prog) > limit:
-        fitness += 1000
+        fitness += penalty
     for i in range(0, len(target)):
         fitness += abs(result[i] - target[i])
     fitness += len(target)
@@ -244,65 +244,50 @@ def evaluate_fitness(prog, target, interpreter, limit):
     #fitness += prog.index(']') - prog.index(']') / 2
     #fitness += int((prog.index('[') - 0) / 2)
     #print(prog, ' -> ', fitness)
-    return fitness
+    return fitness 
 
-import progressbar
+
+def proc_gen(population, crossover_prop, point_mut_prop, loop_insert_mut_prop):
+    # run crossover mutations
+    num_crossovers = int(crossover_prop * len(population))
+    while num_crossovers > 0:
+        c1, c2 = select_crossover(population, target, interpreter, limit)
+        population.append(c1)
+        population.append(c2)
+        num_crossovers -= 1
+    # run point mutations
+    num_point_mutations = int(point_mut_prop * len(population))
+    while num_point_mutations > 0:
+        child = select_point_mutation(population, target, \
+                interpreter, limit)
+        population.append(child)
+        num_point_mutations -= 1
+    # run loop insert mutations
+    num_loop_insert_mutations = int(point_mut_prop * len(population))
+    while num_loop_insert_mutations > 0:
+        child = select_loop_insert_mutation(population, target, \
+                interpreter, limit)
+        population.append(child)
+        num_loop_insert_mutations -= 1
+    natural_select_pop(population)
+
 
 def create_iterative_program(target, interpreter, limit):
-    pop_size = 1000
+    pop_size = 500
     population = generate_population(pop_size, target, limit)
     calculate_fitness(population, target, interpreter, limit)
     gen = 0
-    num_gens = 1000
+    num_gens = 500
     crossover_prop = 0.1
     point_mut_prop = 0.25
     loop_insert_mut_prop = 0.5
-    #bar = progressbar.ProgressBar(max_value=num_gens)
     while gen < num_gens:
-        #print("======= GEN {} ==========".format(gen))
-        #bar.update(gen)
-        # run crossover mutations
-        num_crossovers = int(crossover_prop * len(population))
-        while num_crossovers > 0:
-            c1, c2 = select_crossover(population, target, interpreter, limit)
-            population.append(c1)
-            population.append(c2)
-            num_crossovers -= 1
-        # run point mutations
-        num_point_mutations = int(point_mut_prop * len(population))
-        while num_point_mutations > 0:
-            child = select_point_mutation(population, target, \
-                                          interpreter, limit)
-            population.append(child)
-            num_point_mutations -= 1
-        # run loop insert mutations
-        num_loop_insert_mutations = int(point_mut_prop * len(population))
-        while num_loop_insert_mutations > 0:
-            child = select_loop_insert_mutation(population, target, \
-                                                interpreter, limit)
-            population.append(child)
-            num_loop_insert_mutations -= 1
+        proc_gen(population, crossover_prop, point_mut_prop, \
+                 loop_insert_mut_prop)
         natural_select_pop(population)
         gen += 1
     winner = population[0]
     result = prog_buffer(len(target))
     interpreter(winner['program'], result, limit)
-    print("After {} iterations, selected: {}({}) -> {}".format(
-        gen, winner['program'], winner['fitness'], result))
     return winner['program']
 
-
-from sys import argv
-def main():
-    if len(argv) != 2:
-        print("python biogimmickry <target>")
-        return
-    target = [int(c) for c in argv[1].split(',')]
-    limit = int(sum(abs(x) for x in target) / 2)
-    prog = create_iterative_program(target, interpret, limit)
-
-
-
-
-if __name__ == "__main__":
-    main()
