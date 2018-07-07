@@ -1,7 +1,6 @@
 # Name:         Vittorio Dinovi
-# Course:       CSC 480
-# Instructor:   Daniel Kauffman
-# Assignment:   Biogimmickry
+# -------------------------
+# -----------------------------
 # Term:         Winter 2018
 
 # Note: not complete, tried playing around with fitness function
